@@ -38,10 +38,10 @@ ENV CLOUDSDK_PYTHON /usr/local/bin/python$PYTHON_VERSION
 RUN apt install -y libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev && wget --quiet https://www.python.org/ftp/python/${PYTHON_PATCH_VERSION}/Python-${PYTHON_PATCH_VERSION}.tgz && tar -xf Python-${PYTHON_PATCH_VERSION}.tgz && cd Python-${PYTHON_PATCH_VERSION} && ./configure --enable-optimizations && make -j4 && make altinstall
 RUN $CLOUDSDK_PYTHON --version
 
-# JDK 21+ is required by the Google Cloud SDK
-RUN apt-get install -y --no-install-recommends openjdk-21-jdk
+# JDK 25+ is required by the Google Cloud SDK
+RUN apt-get install -y --no-install-recommends openjdk-25-jdk
 RUN mv /opt/java/openjdk /opt/buildagent/jre
-RUN ln -s /usr/lib/jvm/java-21-openjdk-* /opt/java/openjdk
+RUN ln -s /usr/lib/jvm/java-25-openjdk-* /opt/java/openjdk
 RUN java --version
 
 # Google no longer distribute builds compatible with this base image, so instead we install chromium and chromedriver from a Debian package.
