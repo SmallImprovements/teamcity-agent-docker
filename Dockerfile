@@ -38,10 +38,20 @@ ENV CLOUDSDK_PYTHON /usr/local/bin/python$PYTHON_VERSION
 RUN apt install -y libreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev && wget --quiet https://www.python.org/ftp/python/${PYTHON_PATCH_VERSION}/Python-${PYTHON_PATCH_VERSION}.tgz && tar -xf Python-${PYTHON_PATCH_VERSION}.tgz && cd Python-${PYTHON_PATCH_VERSION} && ./configure --enable-optimizations && make -j4 && make altinstall
 RUN $CLOUDSDK_PYTHON --version
 
-# JDK 25+ is required by the Google Cloud SDK
-RUN apt-get install -y --no-install-recommends openjdk-25-jdk
-RUN mv /opt/java/openjdk /opt/buildagent/jre
-RUN ln -s /usr/lib/jvm/java-25-openjdk-* /opt/java/openjdk
+# This base image's APT repositories do not provide JDK 25.
+# Preserve TeamCity's runtime and install Temurin for Google Cloud SDK components.
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+        amd64) java_arch=x64 ;; \
+        arm64) java_arch=aarch64 ;; \
+        *) echo "Unsupported Java architecture" >&2; exit 1 ;; \
+    esac; \
+    curl -fL --retry 3 -o /tmp/jdk.tar.gz \
+        "https://api.adoptium.net/v3/binary/latest/25/ga/linux/${java_arch}/jdk/hotspot/normal/eclipse"; \
+    mv /opt/java/openjdk /opt/buildagent/jre; \
+    mkdir -p /opt/java/openjdk; \
+    tar -xzf /tmp/jdk.tar.gz -C /opt/java/openjdk --strip-components=1; \
+    rm /tmp/jdk.tar.gz
 RUN java --version
 
 # Google no longer distribute builds compatible with this base image, so instead we install chromium and chromedriver from a Debian package.
